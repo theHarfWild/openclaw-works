@@ -89,3 +89,118 @@ paper.* 网关方法保留用于前端 paper-viewer 组件调用。
 
 **文件:** src/gateway/server-methods/paper.ts, ui/src/ui/app-render.ts
 
+
+
+---
+
+## 开发环境使用指南
+
+### 前置要求
+
+- Node.js >= 22.12
+- pnpm（通过 `npm install -g pnpm` 安装）
+- Git
+- DeepSeek API Key（或其他 OpenAI 兼容的 API Key）
+
+### 1. 初始化
+
+```bash
+# 克隆项目
+git clone https://github.com/theHarfWild/openclaw-works.git
+cd openclaw-works
+
+# 安装依赖
+pnpm install
+
+# 构建项目
+pnpm build
+pnpm ui:build
+```
+
+### 2. 配置 API Key
+
+#### 方式一：创建项目级 .env（推荐）
+
+在项目根目录创建 `.env` 文件：
+
+```bash
+echo DEEPSEEK_API_KEY=你的key > .env
+```
+
+#### 方式二：运行配置向导
+
+```bash
+node scripts/run-node.mjs --dev onboard
+```
+
+配置存储在 `~/.openclaw-dev/openclaw.json`，端口 19001。
+
+#### 方式三：PyCharm / VS Code 环境变量
+
+在 IDE 的 Run Configuration 中添加环境变量：
+```
+DEEPSEEK_API_KEY=你的key
+```
+
+### 3. 启动开发服务
+
+**启动后端 Gateway（端口 19001）：**
+
+```bash
+pnpm gateway:dev
+```
+
+**启动前端 UI（端口 5173）：**
+
+```bash
+pnpm ui:dev
+```
+
+打开浏览器访问 `http://localhost:5173`，聊天 Tab 与 Agent 对话，
+论文 Tab 查看 PDF 预览。
+
+### 4. 使用论文写作功能
+
+1. 在聊天 Tab 中，向 Agent 说 "帮我写一篇论文" 或 "write a paper about..."
+2. Agent 将自动加载 paper-writing 技能，按状态机流程引导：
+   - 确认主题 → 确认格式 → 确认结构 → 开始写作 → LaTeX 编译 → 修改迭代
+3. 切换到「论文」Tab 可以实时查看 PDF 和 LaTeX 源码
+4. 编译后的 PDF 在工作区 `~/.openclaw-dev/workspace-dev/paper_task_xxx/` 中
+
+### 5. 端口说明
+
+| 服务 | 开发模式端口 | 命令 |
+|------|-------------|------|
+| Gateway API | `ws://127.0.0.1:19001` | `pnpm gateway:dev` |
+| Control UI | `http://localhost:5173` | `pnpm ui:dev` |
+| Browser Control | `http://127.0.0.1:19003` | 自动启动 |
+
+### 6. 停止服务
+
+```bash
+# 查找并停止占用端口的进程
+netstat -ano | grep 19001    # 找到 PID
+taskkill //F //PID <PID>     # 停止 Gateway
+
+netstat -ano | grep 5173    # 找到 PID
+taskkill //F //PID <PID>     # 停止 UI
+```
+
+### 7. 常见问题
+
+**Q: Agent 看不到 paper-writing 技能？**
+A: 确认 `skills/paper-writing/SKILL.md` 存在，且 gateway 已重启。
+   如果仍不可见，检查是否有其他 skill filter 配置。
+
+**Q: LaTeX 编译报错？**
+A: Windows 上默认没有 LaTeX 环境。安装 MiKTeX 或 TeX Live 后即可编译。
+   也可以仅编写 .tex 文件，在 Linux 上编译。
+
+**Q: 前端 paper Tab 显示空白？**
+A: 确认 gateway 已启动，且当前有已创建的论文任务。
+   Tab 会自动从后端拉取任务列表并选中。
+
+**Q: pnpm install 报错？**
+A: 确保 Node.js >= 22.12，`node -v` 检查版本。
+   如果用 npm 安装 pnpm 失败，尝试 `npm install -g pnpm --registry=https://registry.npmmirror.com`。
+
